@@ -1,2 +1,6 @@
 opencv-python
 mediapipe
+pandas
+scikit-learn
+joblib
+yt-dlp

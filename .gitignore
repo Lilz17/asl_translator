@@ -1,6 +1,8 @@
 dataset/
 *.h5
 *.pkl
+asl_env/
+asl_landmarks.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
