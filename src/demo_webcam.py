@@ -6,12 +6,12 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 # 1. Load the pre-trained machine learning model weights
-MODEL_OUTPUT = 'asl_rf_model.pkl'
+MODEL_OUTPUT = 'models/asl_rf_model.pkl'
 rf_model = joblib.load(MODEL_OUTPUT)
 print(f"Loaded pre-trained model structural weights from {MODEL_OUTPUT}")
 
 # 2. Configure MediaPipe for sequential live video feed tracking
-MODEL_PATH = 'hand_landmarker.task'
+MODEL_PATH = 'models/hand_landmarker.task'
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.HandLandmarkerOptions(
     base_options=base_options,

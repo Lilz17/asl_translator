@@ -44,7 +44,6 @@ print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
 
 # 5. Save the trained model weights to disk
-# .pkl files are added to your .gitignore so this stays local
 MODEL_OUTPUT = 'asl_rf_model.pkl'
 joblib.dump(model, MODEL_OUTPUT)
 print(f"Model saved successfully to {MODEL_OUTPUT}")

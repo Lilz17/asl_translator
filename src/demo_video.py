@@ -21,16 +21,16 @@ else:
     INPUT_TARGET = 'https://www.youtube.com/watch?v=eeAq4gkOEUY'  # Example YouTube video with ASL content
 
 # 2. Load ML components
-MODEL_OUTPUT = 'asl_rf_model.pkl'
+MODEL_OUTPUT = 'models/asl_rf_model.pkl'
 rf_model = joblib.load(MODEL_OUTPUT)
-MODEL_PATH = 'hand_landmarker.task'
+MODEL_PATH = 'models/hand_landmarker.task'
 
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.HandLandmarkerOptions(
     base_options=base_options,
     running_mode=vision.RunningMode.VIDEO,
     num_hands=1,
-    min_hand_detection_confidence=0.6 # Slightly lower confidence threshold helps with fast video movement
+    min_hand_detection_confidence=0.6 # reduced from 0.7 to help with fast video movement
 )
 
 HAND_CONNECTIONS = [

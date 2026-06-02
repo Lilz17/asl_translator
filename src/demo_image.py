@@ -18,12 +18,12 @@ if not os.path.exists(IMAGE_PATH):
     sys.exit(1)
 
 # 2. Load the pre-trained Random Forest model structure
-MODEL_OUTPUT = 'asl_rf_model.pkl'
+MODEL_OUTPUT = 'models/asl_rf_model.pkl'
 rf_model = joblib.load(MODEL_OUTPUT)
 print(f"Loaded pre-trained model weights from {MODEL_OUTPUT}")
 
 # 3. Configure MediaPipe for Static Image mode processing
-MODEL_PATH = 'hand_landmarker.task'
+MODEL_PATH = 'models/hand_landmarker.task'
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.HandLandmarkerOptions(
     base_options=base_options,
