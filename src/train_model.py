@@ -9,7 +9,7 @@ import joblib
 # joblib is used to save the trained model weights to disk for future use.
 
 # 1. Load the generated dataset
-DATA_PATH = 'asl_landmarks.csv'
+DATA_PATH = 'data/asl_landmarks.csv'
 print(f"Loading dataset from {DATA_PATH}...")
 df = pd.read_csv(DATA_PATH)
 
