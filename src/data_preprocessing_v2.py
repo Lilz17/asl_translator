@@ -4,7 +4,7 @@ import time
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-model_path = 'hand_landmarker.task'
+model_path = 'models/hand_landmarker.task'
 base_options = python.BaseOptions(model_asset_path=model_path)
 
 options = vision.HandLandmarkerOptions(
