@@ -6,24 +6,26 @@ import joblib
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
+# project root folder
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+IMAGE_PATH = os.path.join(BASE_DIR, 'dataset', 'ASL_Static', 'SigNN Character Database', 'A', '1.jpg')
+MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_rf_model.pkl')
+MODEL_PATH = os.path.join(BASE_DIR, 'models', 'hand_landmarker.task')
+
 # 1. Verification check: pass image via command line or use a default fallback
 if len(sys.argv) > 1:
     IMAGE_PATH = sys.argv[1]
-else:
-    # Fallback to a placeholder path if you just run the script directly
-    IMAGE_PATH = 'dataset/ASL_Static/SigNN Character Database/A/1.jpg' 
 
 if not os.path.exists(IMAGE_PATH):
     print(f"Error: Target image file not found at '{IMAGE_PATH}'")
     sys.exit(1)
 
 # 2. Load the pre-trained Random Forest model structure
-MODEL_OUTPUT = 'models/asl_rf_model.pkl'
 rf_model = joblib.load(MODEL_OUTPUT)
 print(f"Loaded pre-trained model weights from {MODEL_OUTPUT}")
 
 # 3. Configure MediaPipe for Static Image mode processing
-MODEL_PATH = 'models/hand_landmarker.task'
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.HandLandmarkerOptions(
     base_options=base_options,

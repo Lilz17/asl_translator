@@ -13,6 +13,13 @@ import yt_dlp
 warnings.filterwarnings("ignore", category=UserWarning)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+# project root folder
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_rf_model.pkl')
+MODEL_PATH = os.path.join(BASE_DIR, 'models', 'hand_landmarker.task')
+
+
 # 1. Choose Input: Accept a local video file, a YouTube link, or fallback to default
 if len(sys.argv) > 1:
     INPUT_TARGET = sys.argv[1]
@@ -21,9 +28,7 @@ else:
     INPUT_TARGET = 'https://www.youtube.com/watch?v=eeAq4gkOEUY'  # Example YouTube video with ASL content
 
 # 2. Load ML components
-MODEL_OUTPUT = 'models/asl_rf_model.pkl'
 rf_model = joblib.load(MODEL_OUTPUT)
-MODEL_PATH = 'models/hand_landmarker.task'
 
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.HandLandmarkerOptions(
