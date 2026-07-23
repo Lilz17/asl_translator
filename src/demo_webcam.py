@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 import time
 import joblib
+import pandas as pd
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
@@ -9,6 +10,9 @@ from mediapipe.tasks.python import vision
 MODEL_OUTPUT = 'models/asl_rf_model.pkl'
 rf_model = joblib.load(MODEL_OUTPUT)
 print(f"Loaded pre-trained model structural weights from {MODEL_OUTPUT}")
+
+# Pre-define feature column names matching your training DataFrame (x0, y0, z0 ... z20)
+FEATURE_NAMES = [f'{axis}{i}' for i in range(21) for axis in ['x', 'y', 'z']]
 
 # 2. Configure MediaPipe for sequential live video feed tracking
 MODEL_PATH = 'models/hand_landmarker.task'
@@ -42,7 +46,7 @@ with vision.HandLandmarker.create_from_options(options) as detector:
             break
 
         # Flip the image horizontally for a natural mirror-view experience
-        # frame = cv2.flip(frame, 1)
+        frame = cv2.flip(frame, 1)
         h, w, _ = frame.shape
         
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -71,12 +75,14 @@ with vision.HandLandmarker.create_from_options(options) as detector:
                 # Collect screen coordinates for drawing overlays
                 pixel_points.append((int(lm.x * w), int(lm.y * h)))
             
-            # Pass the 63 flattened relative coordinates into the trained model
-            # [features] converts it to a 2D array shape (1, 63) expected by scikit-learn
-            prediction = rf_model.predict([features])[0]
+            # Wrap feature list in a DataFrame with matching column names to eliminate Scikit-Learn warnings
+            features_df = pd.DataFrame([features], columns=FEATURE_NAMES)
+
+            # Pass the 1-row DataFrame into the trained model
+            prediction = rf_model.predict(features_df)[0]
             
             # Fetch confidence probabilities to display how sure the model is
-            probabilities = rf_model.predict_proba([features])[0]
+            probabilities = rf_model.predict_proba(features_df)[0]
             max_prob = max(probabilities) * 100
 
             # Draw a clean UI boundary text container on the live OpenCV frame
@@ -86,10 +92,6 @@ with vision.HandLandmarker.create_from_options(options) as detector:
             color = (0, 255, 0) if max_prob > 75 else (0, 0, 255)
             cv2.putText(frame, display_text, (30, 60), 
                         cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)
-
-            # Draw basic joint tracking points onto screen
-            # for pt in pixel_points:
-            #     cv2.circle(frame, pt, 4, (255, 0, 0), -1)
 
             # Draw the skeletal bones (lines) connecting the joints
             for connection in HAND_CONNECTIONS:

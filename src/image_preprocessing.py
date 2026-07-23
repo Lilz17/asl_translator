@@ -7,8 +7,11 @@ from mediapipe.tasks.python import vision
 
 # Setup paths
 DATASET_PATH = 'dataset/ASL_Static/SigNN Character Database/'
-OUTPUT_CSV = 'asl_landmarks.csv'
-MODEL_PATH = 'hand_landmarker.task'
+OUTPUT_CSV = 'data/asl_landmarks.csv'
+MODEL_PATH = 'models/hand_landmarker.task'
+
+# Ensure the output directory /data/ exists before writing
+os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 
 # Configure MediaPipe for Static Images
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
