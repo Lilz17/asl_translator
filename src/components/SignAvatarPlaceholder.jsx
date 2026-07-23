@@ -1,0 +1,1 @@
+/* SignAvatarPlaceholder.jsx removed completely per user request */
