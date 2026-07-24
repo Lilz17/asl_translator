@@ -3,26 +3,29 @@ import mediapipe as mp
 import time
 import joblib
 import pandas as pd
+import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 import os
 
-# project root folder
+# Project root folder
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_rf_model.pkl')
+MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_best_model.pkl')
 MODEL_PATH = os.path.join(BASE_DIR, 'models', 'hand_landmarker.task')
+LABEL_ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'label_encoder.pkl')
 
+# Load the pre-trained machine learning model weights & optional Label Encoder
+model = joblib.load(MODEL_OUTPUT)
+label_encoder = joblib.load(LABEL_ENCODER_PATH) if os.path.exists(LABEL_ENCODER_PATH) else None
 
-# 1. Load the pre-trained machine learning model weights
-rf_model = joblib.load(MODEL_OUTPUT)
 print(f"Loaded pre-trained model structural weights from {MODEL_OUTPUT}")
 
 # Pre-define feature column names matching your training DataFrame (x0, y0, z0 ... z20)
 FEATURE_NAMES = [f'{axis}{i}' for i in range(21) for axis in ['x', 'y', 'z']]
 
-# 2. Configure MediaPipe for sequential live video feed tracking
+# Configure MediaPipe for sequential live video feed tracking
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.HandLandmarkerOptions(
     base_options=base_options,
@@ -33,12 +36,12 @@ options = vision.HandLandmarkerOptions(
 )
 
 HAND_CONNECTIONS = [
-    (0, 1), (1, 2), (2, 3), (3, 4),      # Thumb
-    (0, 5), (5, 6), (6, 7), (7, 8),      # Index Finger
-    (9, 10), (10, 11), (11, 12),         # Middle Finger (starts from 5/9 connection)
-    (13, 14), (14, 15), (15, 16),        # Ring Finger
-    (0, 17), (17, 18), (18, 19), (19, 20),# Pinky
-    (5, 9), (9, 13), (13, 17)            # Palm baseline connections
+    (0, 1), (1, 2), (2, 3), (3, 4),        # Thumb
+    (0, 5), (5, 6), (6, 7), (7, 8),        # Index Finger
+    (9, 10), (10, 11), (11, 12),           # Middle Finger
+    (13, 14), (14, 15), (15, 16),          # Ring Finger
+    (0, 17), (17, 18), (18, 19), (19, 20), # Pinky
+    (5, 9), (9, 13), (13, 17)              # Palm baseline connections
 ]
 
 with vision.HandLandmarker.create_from_options(options) as detector:
@@ -76,26 +79,30 @@ with vision.HandLandmarker.create_from_options(options) as detector:
             pixel_points = []
             
             for lm in landmarks:
-                # Add normalized mathematical features to pass to Random Forest
+                # Add normalized mathematical features to pass to trained model
                 features.extend([lm.x - wrist_x, lm.y - wrist_y, lm.z - wrist_z])
                 
                 # Collect screen coordinates for drawing overlays
                 pixel_points.append((int(lm.x * w), int(lm.y * h)))
             
-            # Wrap feature list in a DataFrame with matching column names to eliminate Scikit-Learn warnings
+            # Wrap feature list in a DataFrame with matching column names
             features_df = pd.DataFrame([features], columns=FEATURE_NAMES)
 
-            # Pass the 1-row DataFrame into the trained model
-            prediction = rf_model.predict(features_df)[0]
-            
-            # Fetch confidence probabilities to display how sure the model is
-            probabilities = rf_model.predict_proba(features_df)[0]
-            max_prob = max(probabilities) * 100
+            # Fetch confidence probabilities
+            probabilities = model.predict_proba(features_df)[0]
+            best_idx = np.argmax(probabilities)
+            max_prob = probabilities[best_idx] * 100
+
+            # Map the index back to the letter ('A'-'Z')
+            if label_encoder is not None:
+                predicted_sign = label_encoder.inverse_transform([best_idx])[0]
+            else:
+                predicted_sign = model.classes_[best_idx]
 
             # Draw a clean UI boundary text container on the live OpenCV frame
-            display_text = f"Predicted Sign: {prediction} ({max_prob:.1f}%)"
+            display_text = f"Predicted Sign: {predicted_sign} ({max_prob:.1f}%)"
             
-            # Render a green text box if confidence is high, red if shaky
+            # Render a green text box if confidence is high (above 75%) else red
             color = (0, 255, 0) if max_prob > 75 else (0, 0, 255)
             cv2.putText(frame, display_text, (30, 60), 
                         cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)

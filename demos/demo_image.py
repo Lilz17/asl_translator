@@ -1,6 +1,8 @@
 import sys
 import os
 import cv2
+import numpy as np
+import pandas as pd
 import mediapipe as mp
 import joblib
 from mediapipe.tasks import python
@@ -10,10 +12,11 @@ from mediapipe.tasks.python import vision
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IMAGE_PATH = os.path.join(BASE_DIR, 'dataset', 'ASL_Static', 'SigNN Character Database', 'A', '1.jpg')
-MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_rf_model.pkl')
+MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_best_model.pkl')
 MODEL_PATH = os.path.join(BASE_DIR, 'models', 'hand_landmarker.task')
+LABEL_ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'label_encoder.pkl')
 
-# 1. Verification check: pass image via command line or use a default fallback
+# Verification check: pass image via command line or use a default fallback
 if len(sys.argv) > 1:
     IMAGE_PATH = sys.argv[1]
 
@@ -21,11 +24,16 @@ if not os.path.exists(IMAGE_PATH):
     print(f"Error: Target image file not found at '{IMAGE_PATH}'")
     sys.exit(1)
 
-# 2. Load the pre-trained Random Forest model structure
-rf_model = joblib.load(MODEL_OUTPUT)
+# Load the pre-trained model structure & optional Label Encoder
+model = joblib.load(MODEL_OUTPUT)
+label_encoder = joblib.load(LABEL_ENCODER_PATH) if os.path.exists(LABEL_ENCODER_PATH) else None
+
 print(f"Loaded pre-trained model weights from {MODEL_OUTPUT}")
 
-# 3. Configure MediaPipe for Static Image mode processing
+# Pre-define feature column names matching the training DataFrame
+FEATURE_NAMES = [f'{axis}{i}' for i in range(21) for axis in ['x', 'y', 'z']]
+
+# Configure MediaPipe for Static Image mode processing
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.HandLandmarkerOptions(
     base_options=base_options,
@@ -66,17 +74,26 @@ with vision.HandLandmarker.create_from_options(options) as detector:
         pixel_points = []
         
         for lm in landmarks:
-            # Replicate the exact mathematical transformation used in your training data
+            # Replicate the exact mathematical transformation used in the training data
             features.extend([lm.x - wrist_x, lm.y - wrist_y, lm.z - wrist_z])
             pixel_points.append((int(lm.x * w), int(lm.y * h)))
             
-        # Run calculation inferences via Scikit-Learn
-        prediction = rf_model.predict([features])[0]
-        probabilities = rf_model.predict_proba([features])[0]
-        max_prob = max(probabilities) * 100
+        # Wrap feature list in a DataFrame with matching column names
+        features_df = pd.DataFrame([features], columns=FEATURE_NAMES)
+
+        # Fetch confidence probabilities
+        probabilities = model.predict_proba(features_df)[0]
+        best_idx = np.argmax(probabilities)
+        max_prob = probabilities[best_idx] * 100
+
+        # Map the index back to the letter ('A'-'Z')
+        if label_encoder is not None:
+            predicted_sign = label_encoder.inverse_transform([best_idx])[0]
+        else:
+            predicted_sign = model.classes_[best_idx]
 
         # Draw UI overlay texts and skeletal frames onto the matrix container
-        display_text = f"Predicted Sign: {prediction} ({max_prob:.1f}%)"
+        display_text = f"Predicted Sign: {predicted_sign} ({max_prob:.1f}%)"
         color = (0, 255, 0) if max_prob > 75 else (0, 0, 255)
         
         cv2.putText(frame, display_text, (30, 50), 

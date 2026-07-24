@@ -50,6 +50,13 @@ asl_env\Scripts\activate
 uv pip install -r requirements.txt
 
 ```
+
+### macOS Prerequisites
+XGBoost requires the OpenMP library on Apple Silicon:
+```bash
+brew install libomp
+```
+
 ## Current Project Benchmarks
 
 * **Dataset Profile:** 8,243 unique extracted geometric samples across 24 alphabet classes.
