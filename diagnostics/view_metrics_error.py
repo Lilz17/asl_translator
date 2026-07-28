@@ -1,5 +1,6 @@
 import os
 import warnings
+from matplotlib import cm
 import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
@@ -11,8 +12,11 @@ import numpy as np
 warnings.filterwarnings("ignore", category=UserWarning)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-DATA_PATH = 'data/asl_landmarks.csv'
-MODEL_PATH = 'models/asl_rf_model.pkl'
+# project root folder
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DATA_PATH = os.path.join(BASE_DIR, 'data', 'asl_landmarks.csv')
+MODEL_PATH = os.path.join(BASE_DIR, 'models', 'asl_rf_model.pkl')
 
 print("Loading dataset and pre-trained weights...")
 df = pd.read_csv(DATA_PATH)
@@ -35,20 +39,25 @@ print(classification_report(y_test, y_pred))
 # Visualize Confusion Matrix
 print("Generating visual Confusion Matrix heatmap...")
 labels = sorted(y.unique())
-#cm = confusion_matrix(y_test, y_pred, labels=labels)
-cm_absolute = confusion_matrix(y_test, y_pred, labels=labels) # absolute counts
-cm_normalized = cm_absolute.astype('float') / cm_absolute.sum(axis=1)[:, np.newaxis] # normalize by row
+cm = confusion_matrix(y_test, y_pred, labels=labels)
+#cm_absolute = confusion_matrix(y_test, y_pred, labels=labels) # absolute counts
+#cm_normalized = cm_absolute.astype('float') / cm_absolute.sum(axis=1)[:, np.newaxis] # normalize by row
+
+# create a copy to view error matrix
+error_matrix = cm.copy()
+np.fill_diagonal(error_matrix, 0)
 
 plt.figure(figsize=(14, 10))
 
-#sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-#             xticklabels=labels, yticklabels=labels)
-
 # colours will be determined by the normalized values to show relative performance, but annotated with absolute counts for clarity
-sns.heatmap(cm_normalized, annot=cm_absolute, fmt='d', cmap='Blues', 
-          xticklabels=labels, yticklabels=labels, vmin=0, vmax=1)
+# sns.heatmap(cm_normalized, annot=cm_absolute, fmt='d', cmap='Blues', 
+#           xticklabels=labels, yticklabels=labels, vmin=0, vmax=1)
 
-plt.title('ASL Sign Recognition - Confusion Matrix Heatmap', fontsize=16)
+# plotting error matrix: darker colours indicate errors
+sns.heatmap(error_matrix, annot=True, fmt='d', cmap='Reds', 
+            xticklabels=labels, yticklabels=labels)
+
+plt.title('ASL Sign Recognition - Error Isolation Matrix', fontsize=16)
 plt.xlabel('Predicted Alphabet Sign', fontsize=12)
 plt.ylabel('Actual Alphabet Sign', fontsize=12)
 plt.tight_layout()

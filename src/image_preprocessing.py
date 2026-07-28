@@ -5,10 +5,16 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
+# project root folder
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # Setup paths
-DATASET_PATH = 'dataset/ASL_Static/SigNN Character Database/'
-OUTPUT_CSV = 'asl_landmarks.csv'
-MODEL_PATH = 'hand_landmarker.task'
+DATASET_PATH = os.path.join(BASE_DIR, 'dataset', 'ASL_Static', 'SigNN Character Database')
+OUTPUT_CSV = os.path.join(BASE_DIR, 'data', 'asl_landmarks.csv')
+MODEL_PATH = os.path.join(BASE_DIR, 'models', 'hand_landmarker.task')
+
+# Ensure the output directory /data/ exists before writing
+os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 
 # Configure MediaPipe for Static Images
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)

@@ -4,6 +4,8 @@ import time
 import cv2
 import joblib
 import warnings
+import numpy as np
+import pandas as pd
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -13,17 +15,26 @@ import yt_dlp
 warnings.filterwarnings("ignore", category=UserWarning)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-# 1. Choose Input: Accept a local video file, a YouTube link, or fallback to default
+# project root folder
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_best_model.pkl')
+MODEL_PATH = os.path.join(BASE_DIR, 'models', 'hand_landmarker.task')
+LABEL_ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'label_encoder.pkl')
+
+# Choose Input: Accept a local video file, a YouTube link, or fallback to default
 if len(sys.argv) > 1:
     INPUT_TARGET = sys.argv[1]
 else:
     # Default fallback: paste a YouTube link or a local path here to test quickly
     INPUT_TARGET = 'https://www.youtube.com/watch?v=eeAq4gkOEUY'  # Example YouTube video with ASL content
 
-# 2. Load ML components
-MODEL_OUTPUT = 'models/asl_rf_model.pkl'
-rf_model = joblib.load(MODEL_OUTPUT)
-MODEL_PATH = 'models/hand_landmarker.task'
+# Load ML components & optional Label Encoder
+model = joblib.load(MODEL_OUTPUT)
+label_encoder = joblib.load(LABEL_ENCODER_PATH) if os.path.exists(LABEL_ENCODER_PATH) else None
+
+# Pre-define feature column names matching your training DataFrame
+FEATURE_NAMES = [f'{axis}{i}' for i in range(21) for axis in ['x', 'y', 'z']]
 
 base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.HandLandmarkerOptions(
@@ -39,7 +50,7 @@ HAND_CONNECTIONS = [
     (0, 17), (17, 18), (18, 19), (19, 20), (5, 9), (9, 13), (13, 17)
 ]
 
-# 3. Handle YouTube Links vs Local Files
+# Handle YouTube Links vs Local Files
 is_youtube = "youtube.com" in INPUT_TARGET or "youtu.be" in INPUT_TARGET
 
 if is_youtube:
@@ -65,7 +76,6 @@ with vision.HandLandmarker.create_from_options(options) as detector:
             break
 
         # if video is massive -> Resize down
-        # 4K/1080p can lag MediaPipe loops
         if frame.shape[1] > 1000:
             frame = cv2.resize(frame, (960, 540))
 
@@ -89,13 +99,22 @@ with vision.HandLandmarker.create_from_options(options) as detector:
                 features.extend([lm.x - wrist_x, lm.y - wrist_y, lm.z - wrist_z])
                 pixel_points.append((int(lm.x * w), int(lm.y * h)))
             
-            # Predict
-            prediction = rf_model.predict([features])[0]
-            probabilities = rf_model.predict_proba([features])[0]
-            max_prob = max(probabilities) * 100
+            # Wrap feature list in a DataFrame with matching column names
+            features_df = pd.DataFrame([features], columns=FEATURE_NAMES)
+
+            # Predict & fetch probabilities
+            probabilities = model.predict_proba(features_df)[0]
+            best_idx = np.argmax(probabilities)
+            max_prob = probabilities[best_idx] * 100
+
+            # Map the index back to the letter ('A'-'Z')
+            if label_encoder is not None:
+                predicted_sign = label_encoder.inverse_transform([best_idx])[0]
+            else:
+                predicted_sign = model.classes_[best_idx]
 
             # UI Text Overlay
-            display_text = f"ASL Sign: {prediction} ({max_prob:.1f}%)"
+            display_text = f"ASL Sign: {predicted_sign} ({max_prob:.1f}%)"
             color = (0, 255, 0) if max_prob > 70 else (0, 0, 255)
             cv2.putText(frame, display_text, (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 3)
 
