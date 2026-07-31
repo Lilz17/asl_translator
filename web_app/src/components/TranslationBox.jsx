@@ -145,7 +145,11 @@ const TranslationBox = () => {
     Confidence:
   </h3>
 
-  <p>{confidence || 0}%</p>
+  <p>
+  {confidence
+    ? `${confidence}%`
+    : "None"}
+  </p>
 </div>
       <div className="bg-slate-50/50 border border-slate-100 rounded-3xl p-4">
 
