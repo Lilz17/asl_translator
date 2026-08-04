@@ -8,11 +8,16 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+*.pyc
+*.pth
 
 # Data & Large Datasets
 dataset/
 data/*.csv
 !data/.gitkeep
+*.task
+data/ASL_Dynamic_Extracted/
+data/ASL_Dynamic_Augmented/
 
 # Model Weights
 models/*.pkl
