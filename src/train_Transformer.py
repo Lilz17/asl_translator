@@ -17,7 +17,7 @@ MODEL_SAVE_PATH = MODELS_DIR / "asl_dynamic_transformer.pth"
 LABEL_ENCODER_PATH = MODELS_DIR / "dynamic_label_encoder.pkl"
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"⚡ Using Device: {DEVICE}")
+print(f"Using Device: {DEVICE}")
 
 BATCH_SIZE = 16
 NUM_EPOCHS = 50
