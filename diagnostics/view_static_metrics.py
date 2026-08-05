@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DATA_PATH = os.path.join(BASE_DIR, 'data', 'asl_landmarks.csv')
 MODEL_PATH = os.path.join(BASE_DIR, 'models', 'asl_static_model.pkl')
-ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'label_encoder.pkl')
+ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'static_label_encoder.pkl')
 
 print("Loading dataset and pre-trained weights...")
 df = pd.read_csv(DATA_PATH)
@@ -32,8 +32,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 model = joblib.load(MODEL_PATH)
 y_pred_numeric = model.predict(X_test)
 
-# Convert numeric predictions back to letter strings if needed
-if os.path.exists(ENCODER_PATH) and isinstance(y_pred_numeric[0], (int, np.integer)):
+# Convert numeric predictions back to letter strings using label encoder
+if os.path.exists(ENCODER_PATH):
     label_encoder = joblib.load(ENCODER_PATH)
     y_pred = label_encoder.inverse_transform(y_pred_numeric)
 else:
