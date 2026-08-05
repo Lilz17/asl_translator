@@ -18,6 +18,7 @@ data/*.csv
 *.task
 data/ASL_Dynamic_Extracted/
 data/ASL_Dynamic_Augmented/
+diagnostics/dynamic_confusion_matrix.png
 
 # Model Weights
 models/*.pkl
