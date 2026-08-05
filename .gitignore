@@ -22,6 +22,7 @@ diagnostics/*.png
 
 # Model Weights
 models/*.pkl
+archive/*.pkl
 
 # OS & IDE Files
 .DS_Store
