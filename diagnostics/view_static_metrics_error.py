@@ -16,7 +16,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DATA_PATH = os.path.join(BASE_DIR, 'data', 'asl_landmarks.csv')
-MODEL_PATH = os.path.join(BASE_DIR, 'models', 'asl_rf_model.pkl')
+MODEL_PATH = os.path.join(BASE_DIR, 'models', 'asl_static_model.pkl')
 
 print("Loading dataset and pre-trained weights...")
 df = pd.read_csv(DATA_PATH)
