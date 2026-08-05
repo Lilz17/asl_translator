@@ -26,6 +26,7 @@ archive/*.pkl
 
 # OS & IDE Files
 .DS_Store
+*.DS_Store
 .vscode/
 .idea/
 

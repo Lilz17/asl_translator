@@ -1,6 +1,5 @@
 import os
 import warnings
-from matplotlib import cm
 import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
@@ -17,6 +16,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DATA_PATH = os.path.join(BASE_DIR, 'data', 'asl_landmarks.csv')
 MODEL_PATH = os.path.join(BASE_DIR, 'models', 'asl_static_model.pkl')
+ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'label_encoder.pkl')  # Add encoder path
 
 print("Loading dataset and pre-trained weights...")
 df = pd.read_csv(DATA_PATH)
@@ -28,9 +28,16 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# Load the saved model and make predictions on the test set
+# Load the saved SVM model and label encoder
 model = joblib.load(MODEL_PATH)
-y_pred = model.predict(X_test)
+y_pred_numeric = model.predict(X_test)
+
+# Convert numeric predictions back to letter strings if needed
+if os.path.exists(ENCODER_PATH) and isinstance(y_pred_numeric[0], (int, np.integer)):
+    label_encoder = joblib.load(ENCODER_PATH)
+    y_pred = label_encoder.inverse_transform(y_pred_numeric)
+else:
+    y_pred = y_pred_numeric
 
 # Display Metrics
 print("\n================ CLASSIFICATION REPORT ================")
@@ -48,10 +55,6 @@ error_matrix = cm.copy()
 np.fill_diagonal(error_matrix, 0)
 
 plt.figure(figsize=(14, 10))
-
-# colours will be determined by the normalized values to show relative performance, but annotated with absolute counts for clarity
-# sns.heatmap(cm_normalized, annot=cm_absolute, fmt='d', cmap='Blues', 
-#           xticklabels=labels, yticklabels=labels, vmin=0, vmax=1)
 
 # plotting error matrix: darker colours indicate errors
 sns.heatmap(error_matrix, annot=True, fmt='d', cmap='Reds', 
