@@ -106,7 +106,7 @@ def main():
 
             print(f"Processing class: '{class_name}' into 66 spatial features...")
             
-            # Check for mp4 files (or add other video formats if needed)
+            # Check for mp4/avi files
             video_files = list(class_folder.glob("*.mp4")) + list(class_folder.glob("*.avi"))
             for vid_file in video_files:
                 seq = extract_features_from_video(vid_file, detector)
@@ -114,7 +114,7 @@ def main():
                     out_path = target_class_dir / f"{vid_file.stem}.npy"
                     np.save(out_path, seq)
 
-    print("\nLandmark extraction completed! Output saved to 'data/ASL_Dynamic_Extracted'.")
+    print(f"\nLandmark extraction completed! Output saved to {OUTPUT_DIR}.")
 
 
 if __name__ == "__main__":

@@ -27,7 +27,9 @@ TARGET_WORDS = {
     "sorry": ["sorry"],
     "yes": ["yes"],
     "no": ["no"],
-    "thank_you": ["thankyou", "thank you"]
+    "thank_you": ["thankyou", "thank you"],
+    "my": ["my"],
+    "name": ["name"]
 }
 
 # ==========================================
