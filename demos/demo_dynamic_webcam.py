@@ -11,13 +11,13 @@ from mediapipe.tasks.python import vision
 import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.append(str(PROJECT_ROOT / "src"))
+
 from train_Transformer import ASLTransformerClassifier
 
 # Configurations
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.append(str(PROJECT_ROOT / "src"))
 MODELS_DIR = PROJECT_ROOT / "models"
-
 MODEL_PATH = MODELS_DIR / "asl_dynamic_transformer.pth"
 LABEL_ENCODER_PATH = MODELS_DIR / "dynamic_label_encoder.pkl"
 HAND_LANDMARKER_PATH = MODELS_DIR / "hand_landmarker.task"
@@ -27,10 +27,10 @@ SEQUENCE_LENGTH = 30
 FEATURE_DIM = 66
 
 # --- DEPLOYMENT SMOOTHING HYPERPARAMETERS ---
-CONFIDENCE_THRESHOLD = 0.80     # Required confidence score
-SMOOTHING_WINDOW = 10           # Number of frames to hold in voting queue
-VOTE_THRESHOLD = 7              # Minimum agreement count (e.g., 5 out of 7 frames)
-MAX_TRANSITION_VELOCITY = 0.08  # Wrist speed limit to prevent mid-transition guessing
+CONFIDENCE_THRESHOLD = 0.60     # Required confidence score
+SMOOTHING_WINDOW = 8            # Number of frames to hold in voting queue
+VOTE_THRESHOLD = 5              # Minimum agreement count (5 out of 8 frames)
+MAX_TRANSITION_VELOCITY = 0.12  # Wrist speed limit to prevent mid-transition guessing
 
 HAND_CONNECTIONS = [
     (0,1), (1,2), (2,3), (3,4),       # Thumb
