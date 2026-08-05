@@ -7,4 +7,6 @@ yt-dlp
 matplotlib
 seaborn
 xgboost
-torch
+torchfastapi
+uvicorn
+pydantic
