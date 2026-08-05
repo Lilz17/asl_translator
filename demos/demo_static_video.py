@@ -18,9 +18,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # project root folder
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_best_model.pkl')
+MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_static_model.pkl')
 MODEL_PATH = os.path.join(BASE_DIR, 'models', 'hand_landmarker.task')
-LABEL_ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'label_encoder.pkl')
+LABEL_ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'static_label_encoder.pkl')
 
 # Choose Input: Accept a local video file, a YouTube link, or fallback to default
 if len(sys.argv) > 1:

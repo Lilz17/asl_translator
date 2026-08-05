@@ -12,9 +12,9 @@ from mediapipe.tasks.python import vision
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IMAGE_PATH = os.path.join(BASE_DIR, 'dataset', 'ASL_Static', 'SigNN Character Database', 'A', '1.jpg')
-MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_best_model.pkl')
+MODEL_OUTPUT = os.path.join(BASE_DIR, 'models', 'asl_static_model.pkl')
 MODEL_PATH = os.path.join(BASE_DIR, 'models', 'hand_landmarker.task')
-LABEL_ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'label_encoder.pkl')
+LABEL_ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'static_label_encoder.pkl')
 
 # Verification check: pass image via command line or use a default fallback
 if len(sys.argv) > 1:
