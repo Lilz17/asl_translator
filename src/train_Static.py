@@ -37,15 +37,15 @@ X_train, X_test, y_train, y_test = train_test_split(
 # --- DEFINE MODELS TO BENCHMARK ---
 models = {
     "Random Forest": (
-        RandomForestClassifier(n_estimators=100, random_state=42),
+        RandomForestClassifier(n_estimators=100, random_state=42, class_weight="balanced"),
         os.path.join(BASE_DIR, 'archive', 'asl_rf_augmented.pkl')
     ),
     "SVM (RBF Kernel)": (
-        SVC(kernel='rbf', C=10.0, gamma='scale', probability=True, random_state=42),
+        SVC(kernel='rbf', C=10.0, gamma='scale', probability=True, random_state=42, class_weight="balanced"),
         os.path.join(BASE_DIR, 'archive', 'asl_svm_augmented.pkl')
     ),
     "XGBoost": (
-        XGBClassifier(n_estimators=100, learning_rate=0.1, max_depth=6, random_state=42, eval_metric='mlogloss'),
+        XGBClassifier(n_estimators=100, learning_rate=0.1, max_depth=6, random_state=42, class_weight="balanced", eval_metric='mlogloss'),
         os.path.join(BASE_DIR, 'archive', 'asl_xgboost_augmented.pkl')
     )
 }
