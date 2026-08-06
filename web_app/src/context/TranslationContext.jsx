@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const TranslationContext = createContext();
 
@@ -10,7 +10,6 @@ export const useTranslation = () => {
   return context;
 };
 
-// Simulated gesture database
 const SIGN_DATABASE = {
   en: [
     { gesture: 'HELLO', confidence: 98, translation: 'Hello' },
@@ -35,20 +34,18 @@ const SIGN_DATABASE = {
 };
 
 export const TranslationProvider = ({ children }) => {
-  // Global States
   const [detectedText, setDetectedText] = useState('');
   const [detectedSign, setDetectedSign] = useState('');
   const [confidence, setConfidence] = useState(0);
-  const [selectedLanguage, setSelectedLanguage] = useState('en'); // 'en' or 'hi'
-  const [voiceGender, setVoiceGender] = useState('female'); // 'male' or 'female'
-  const [cameraStatus, setCameraStatus] = useState('off'); // 'off', 'loading', 'active'
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [voiceGender, setVoiceGender] = useState('female');
+  const [cameraStatus, setCameraStatus] = useState('off');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastDetectedTime, setLastDetectedTime] = useState(null);
 
-  // History State initialized with default items
   const [history, setHistory] = useState([
     { id: '1', sign: 'HELLO', text: 'Hello', timestamp: '10:30 AM', confidence: 98, date: 'Today' },
     { id: '2', sign: 'THANK YOU', text: 'Thank you', timestamp: '10:31 AM', confidence: 96, date: 'Today' },
@@ -56,49 +53,44 @@ export const TranslationProvider = ({ children }) => {
     { id: '4', sign: 'HELP', text: 'Help', timestamp: '10:36 AM', confidence: 99, date: 'Today' },
   ]);
 
-  // Audio speech synthesis
   const speakText = (textToSpeak) => {
     if (!textToSpeak) return;
     if (!('speechSynthesis' in window)) {
       console.warn('Text-to-speech not supported in this browser.');
       return;
     }
-
-    // Cancel active speak
     window.speechSynthesis.cancel();
-
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = selectedLanguage === 'hi' ? 'hi-IN' : 'en-US';
-
-    // Try to find a voice matching preference
     const voices = window.speechSynthesis.getVoices();
     let selectedVoice = null;
-
     if (selectedLanguage === 'hi') {
       selectedVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN'));
     } else {
       if (voiceGender === 'female') {
-        selectedVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Google US English') || v.name.includes('Zira') || v.name.includes('Samantha') || v.name.includes('Hazel') || v.name.includes('Moira')));
+        selectedVoice = voices.find(v => v.lang.includes('en') && (
+          v.name.includes('Google US English') || v.name.includes('Zira') ||
+          v.name.includes('Samantha') || v.name.includes('Hazel') || v.name.includes('Moira')
+        ));
       } else {
-        selectedVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Google UK English') || v.name.includes('David') || v.name.includes('Rishi') || v.name.includes('Daniel')));
+        selectedVoice = voices.find(v => v.lang.includes('en') && (
+          v.name.includes('Google UK English') || v.name.includes('David') ||
+          v.name.includes('Rishi') || v.name.includes('Daniel')
+        ));
       }
     }
-
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
-
+    if (selectedVoice) utterance.voice = selectedVoice;
     window.speechSynthesis.speak(utterance);
   };
 
-  // Trigger speech synthesis automatically when gesture is detected
+  // Auto-speak when new gesture detected
   useEffect(() => {
     if (isSpeechEnabled && detectedText && !isProcessing) {
       speakText(detectedText);
     }
   }, [detectedText, isSpeechEnabled, isProcessing]);
 
-  // Handle dark mode DOM sync
+  // Dark mode sync
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -107,36 +99,10 @@ export const TranslationProvider = ({ children }) => {
     }
   }, [isDarkMode]);
 
-  // Simulated live recognition loop with realistic model delay
-  useEffect(() => {
-    let intervalId;
-    if (cameraStatus === 'active' && isScanning) {
-      intervalId = setInterval(() => {
-        const langDb = SIGN_DATABASE[selectedLanguage] || SIGN_DATABASE.en;
-        const randomIndex = Math.floor(Math.random() * langDb.length);
-        const selected = langDb[randomIndex];
+  // ── Fake simulator removed — real predictions come from WebcamFeed.jsx ──
 
-        setIsProcessing(true);
-        setTimeout(() => {
-          setDetectedSign(selected.gesture);
-          setDetectedText(selected.translation);
-          setConfidence(selected.confidence);
-          setLastDetectedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-          setIsProcessing(false);
-        }, 900); // 900ms simulated inference latency
-      }, 5000); // Infer new gesture every 5 seconds
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [cameraStatus, isScanning, selectedLanguage]);
-
-
-  // Actions
   const startCamera = async () => {
     setCameraStatus('loading');
-    // Simulate user camera authorization delay
     setTimeout(() => {
       setCameraStatus('active');
       setIsScanning(true);
@@ -153,12 +119,7 @@ export const TranslationProvider = ({ children }) => {
 
   const saveCurrentTranslation = () => {
     if (!detectedText) return;
-    
-    // Check if already in history as the latest to prevent duplicates
-    if (history.length > 0 && history[0].text === detectedText) {
-      return;
-    }
-
+    if (history.length > 0 && history[0].text === detectedText) return;
     const newItem = {
       id: Date.now().toString(),
       sign: detectedSign || 'MANUAL',
@@ -167,7 +128,6 @@ export const TranslationProvider = ({ children }) => {
       confidence: confidence || 100,
       date: 'Today'
     };
-
     setHistory(prev => [newItem, ...prev]);
   };
 
@@ -188,13 +148,15 @@ export const TranslationProvider = ({ children }) => {
   const triggerEmergency = (phraseEn, phraseHi) => {
     const text = selectedLanguage === 'hi' ? phraseHi : phraseEn;
     const sign = phraseEn.toUpperCase();
-    
+
+    setIsScanning(false); // pause webcam polling so it doesn't overwrite
     setDetectedSign(sign);
     setDetectedText(text);
     setConfidence(100);
-    setLastDetectedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    
-    // Automatically save emergency statements to history
+    setLastDetectedTime(
+      new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    );
+
     const newItem = {
       id: Date.now().toString(),
       sign: sign,
@@ -204,16 +166,15 @@ export const TranslationProvider = ({ children }) => {
       date: 'Today',
       isEmergency: true
     };
-    
     setHistory(prev => [newItem, ...prev]);
   };
 
   const exportTranscript = () => {
     if (history.length === 0) return;
-    
     const title = `SignBridge Translation Transcript - ${new Date().toLocaleDateString()}\n==========================================\n\n`;
-    const body = history.map(item => `[${item.timestamp}] Sign: ${item.sign} -> Translation: "${item.text}" (${item.confidence}% confidence)`).join('\n');
-    
+    const body = history
+      .map(item => `[${item.timestamp}] Sign: ${item.sign} -> Translation: "${item.text}" (${item.confidence}% confidence)`)
+      .join('\n');
     const blob = new Blob([title + body], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -224,7 +185,6 @@ export const TranslationProvider = ({ children }) => {
     document.body.removeChild(link);
   };
 
-  // Provide state & handlers
   return (
     <TranslationContext.Provider value={{
       detectedText,
@@ -246,6 +206,7 @@ export const TranslationProvider = ({ children }) => {
       isScanning,
       setIsScanning,
       lastDetectedTime,
+      setLastDetectedTime,
       history,
       setHistory,
       startCamera,
@@ -263,6 +224,5 @@ export const TranslationProvider = ({ children }) => {
     }}>
       {children}
     </TranslationContext.Provider>
-
   );
 };

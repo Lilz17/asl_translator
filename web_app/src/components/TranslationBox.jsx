@@ -29,31 +29,6 @@ const TranslationBox = () => {
     isProcessing,
     setIsProcessing
   } = useTranslation();
-  const [savedSuccess, setSavedSuccess] =
-  React.useState(false);
-
-  React.useEffect(() => {
-    console.log("USE EFFECT RUNNING");
-  
-    const test = async () => {
-      try {
-        const data =
-          await predictGesture();
-  
-        console.log(
-          "FASTAPI RESPONSE:",
-          data
-        );
-      } catch (err) {
-        console.log(
-          "FASTAPI ERROR",
-          err
-        );
-      }
-    };
-  
-    test();
-  }, []);
 
   const handleSpeak = () => {
     speakText(detectedText);
