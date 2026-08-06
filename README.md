@@ -1,69 +1,173 @@
-# Real-Time ASL to English Translator
-This project aims to create a real-time ASL detection system using MediaPipe to handle hand detection and RF/CNN for gesture classification.
 
-Our model is a lightweight ML/CV pipeline that extracts hand landmarks from a live webcam feed or an image/video file and converts them into the respective ASL letters.
+# Real-Time American Sign Language (ASL) Recognition Engine
 
-We started off with training our model to detect static signs (letters A-Y excluding J). We used a two-stage architecture:
-- Mediapipe for feature extraction
-- Random Forest Classifier for real-time translation
+An end-to-end Machine Learning and Computer Vision framework for translating American Sign Language (ASL) in real time. The system features a dual-architecture engine capable of recognizing Static Alphabet Signs ($A$–$Y$, excl. $J$) using spatial keypoint alignment and Dynamic Gesture Sequences using a Spatial-Temporal Transformer.
+
 
 ## System Architecture
-1. Feature Extraction: MediaPipe isolates a total of 21 hand landmarks, with each landmark consisting of (X, Y, Z) coordinates for a total of 63 features per frame
-2. Relative Scaling: We use the wrist (landmark 0) as our anchor point and subtract its coordinates from all other joints. This relative scaling modification ensures that the system is not affected by varying hand sizes or distances of the hand from the camera lens.
-3. Classification: We train a Random Forest Classifier on our image dataset. We then use this pretrained model to evaluate a new image or video's scaled spatial coordinates and predict which letter sign was displayed.
-
-## Repository Files
-### Core ML Assets
-- `hand_landmarker.task`: This is the official Google MediaPipe Tasks API bundle used to map out hand structures
-- `asl_rf_model.pkl`: The frozen weights of our trained Random Forest Classifier model which is saved using `joblib`. We will use this pretrained model for testing its performance on new image/video data.
-
-### Configuration and Testing
-- `test_cam.py`: To verify that OpenCV can access the device camera
-- `src/data_preprocessing.py`: Evaluates the webcam stream, isolates hands, and prints raw coordinate indices directly to the console.
-- `src/data_preprocessing_v2.py`: An upgraded preprocessing script that dynamically draws the skeletal structure (red joint nodes and green skeletal edges) over the detected hand in real time.
-
-### Feature Extraction & Model Training
-- `src/image_preprocessing.py`: An automated dataset parser that iterates recursively through directory labels, extracts the relatively normalized landmark coordinates, and saves the flattened matrix arrays directly into asl_landmarks.csv.
-- `src/train_model.py`: Loads asl_landmarks.csv, splits features into stratified train/test splits, trains a 100-tree Random Forest engine, and prints out precision metric evaluations.
-
-### Runtime Demonstrations
-- `src/demo_webcam.py`: Tests the model on the user's live webcam feed.
-- `src/demo_image.py`: Tests the model on a single static image path file.
-- `src/demo_video.py`: Tests the model on a standard .mp4 video file or on a YouTube video.
-
-## Installation & Development Workspace
-We use `uv` by Astral for version control. `uv` is an extremely fast Python package and project manager written in Rust.
-
-### 1. Create an Environment
-
-```powershell
-# Create a new environment with uv
-uv venv asl_env --python 3.12
-
-# Activate the environment
-asl_env\Scripts\activate
-```
-
-### 2. Package Installation
-
-```powershell
-uv pip install -r requirements.txt
 
 ```
+                                ┌─ Static (21 Keypoints / 63 Dim)  ──► SVM Classifier ─────────► Letter ('A'-'Y' (minus 'J'))
+[ Frame / Video ] ──► MediaPipe ┤
+                                └─ Dynamic (30 Frames / 66 Dim)   ──► Spatial-Temporal Transformer ──► Word ('J', 'Z', 'HELLO', etc.)
+```
 
-### macOS Prerequisites
-XGBoost requires the OpenMP library on Apple Silicon:
+1. **Feature Extraction**: MediaPipe Hand Landmarker extracts 21 3D hand keypoints ($x, y, z$), yielding 63 spatial features per frame.
+2. **Wrist-Relative Normalization**: All joint coordinates are calculated relative to the wrist anchor ($lm_0$). This mathematical alignment guarantees scale and positional invariance regardless of hand distance or frame position.
+3. **Static Classification**: Evaluates normalized static frame vectors through an optimized Support Vector Machine (SVM).
+4. **Dynamic Sequence Translation**: Processes 30-frame temporal landmark sequences (including velocity components $v_x, v_y, v_z$) using a 3-layer Spatial-Temporal Transformer with multi-head self-attention.
+5. **Full-Stack Deployment**: Exposes inference endpoints via a FastAPI microservice consumed by a modern React + Vite web application.
+## Prerequisites & Installation
+
+### System Dependencies
+
+- **Python**: 3.10+
+
+- **Node.js & npm**: Required for the web interface. On macOS, install via Homebrew if missing:
+
+```bash
+brew install node
+```
+
+- **OpenMP (macOS only)**: Required by XGBoost on Apple Silicon:
+
 ```bash
 brew install libomp
 ```
 
-## Current Project Benchmarks
+### Environment Setup (`uv`)
 
-* **Dataset Profile:** 8,243 unique extracted geometric samples across 24 alphabet classes.
-* **Pipeline Matrix Precision:** **96.30% overall macro-average accuracy.**
+We use [uv](https://github.com/astral-sh/uv) for fast, reliable package management.
 
-## Future Goals:
+```bash
+# 1. Clone repository
+git clone https://github.com/Lilz17/asl_translator.git
+cd asl_translator
 
-* [ ] **Text-to-Speech (TTS):** Integrate an accessibility audio synthesis engine (e.g. `pyttsx3`) to speak out the decoded letters.
-* [ ] **Data Augmentation:** Inject artificial spatial noise (jitter transformations) and subtle 2D coordinate rotation matrices into fist-profile signatures (M vs N, S vs T) to sharpen classification boundaries.
-* [ ] **React.js Frontend Integration:** Integrate the React.js frontend prototype with our trained model via FastAPI web framework.
+# 2. Create virtual environment
+uv venv asl_env
+
+# 3. Activate environment
+# macOS / Linux:
+source asl_env/bin/activate
+# Windows:
+asl_env\Scripts\activate
+
+# 4. Install Python dependencies
+uv pip install -r requirements.txt
+```
+## Dataset Directory Preparation
+
+Before running training pipelines, extract your dataset archives into a root `/dataset/` directory:
+
+```
+asl_translator/
+└── dataset/
+    ├── ASL_Static/             # Extracted static image folders ('A' through 'Y' excluding 'J')
+    └── ASL_Dynamic_FULL/       # Raw dynamic video clip directories
+```
+## Pipeline Execution & Model Training
+
+### 1. Static Sign Model Pipeline ($A$–$Z$)
+
+```bash
+# Extract normalized spatial coordinates from images -> data/asl_landmarks.csv
+python src/image_preprocessing.py
+
+# Train baseline Random Forest model
+python src/train_static_baseline.py
+
+# Generate spatial jitter augmentations -> data/asl_landmarks_augmented.csv
+python src/augment_data_static.py
+
+# Train & compare RF, XGBoost, and SVM -> saves best to models/asl_static_model.pkl
+python src/train_Static.py
+```
+
+### Diagnostics & Demonstration Scripts:
+
+```bash
+# Plot confusion and error matrix heatmaps
+python diagnostics/view_static_metrics.py
+python diagnostics/view_static_metrics_error.py
+
+# Run standalone OpenCV inference demos
+python demos/demo_static_image.py <optional_path_to_image>
+python demos/demo_static_video.py <optional_path_to_video>
+python demos/demo_static_webcam.py
+```
+
+### 2. Dynamic Sign Transformer Pipeline
+
+```bash
+# Filter target vocabulary clips from raw data -> dataset/ASL_Dynamic
+python src/setup_dynamic_dataset.py
+
+# Extract sequence arrays -> data/ASL_Dynamic_Extracted
+python src/video_preprocessing.py
+
+# Inject synthetic neutral non-gesture frames
+python src/create_neutral_class.py
+
+# Apply Gaussian temporal noise & train/test split -> data/ASL_Dynamic_Augmented
+python src/augment_data_dynamic.py
+
+# Train Spatial-Temporal Transformer -> models/asl_dynamic_transformer.pth
+python src/train_Transformer.py
+```
+
+### Diagnostics & Demonstration Scripts:
+
+```bash
+# Evaluate Transformer metrics & confusion matrices
+python diagnostics/view_dynamic_metrics.py
+python diagnostics/view_dynamic_metrics_error.py
+
+# Run dynamic gesture demos
+python demos/demo_dynamic_video.py <path_to_video>
+python demos/demo_dynamic_webcam.py
+```
+## Web Application Deployment
+
+To run the full-stack web interface, execute the FastAPI backend and React frontend concurrently in separate terminal windows.
+
+### Step 1: Launch FastAPI Backend
+
+```bash
+cd web_app/backend
+uvicorn app.main:app --reload --port 8000
+```
+- Interactive API documentation: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+### Step 2: Launch React Frontend
+
+```bash
+# Open a new terminal tab
+cd web_app
+npm install
+npm run dev
+```
+- Access the web interface at [http://localhost:5173](http://localhost:5173)
+
+## Repository Structure
+
+```
+asl_translator/
+├── dataset/                   # Raw & extracted dataset folders
+├── data/                      # Processed landmark CSVs and .npy sequence files
+├── diagnostics/               # Metric evaluation & plot generation tools
+├── models/                    # Trained model weights & label encoders
+│   ├── asl_rf_model.pkl
+│   ├── asl_static_model.pkl
+│   ├── static_label_encoder.pkl
+│   ├── asl_dynamic_transformer.pth
+│   ├── dynamic_label_encoder.pkl
+│   └── hand_landmarker.task
+├── src/                       # Core ML preprocessing and training modules
+├── demos/                     # Standalone real-time OpenCV webcam demos
+├── web_app/                   # Full-stack deployment suite
+│   ├── backend/               # FastAPI REST microservice (app/main.py)
+│   └── src/                   # React.js UI components & pages
+├── requirements.txt           # Python package dependencies
+└── README.md
+```
